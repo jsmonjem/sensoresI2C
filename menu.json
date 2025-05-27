@@ -1,0 +1,27 @@
+{
+    "Reloj": {
+        "Hora": "mostrar_hora",
+        "Crono":{"Iniciar":"iniciar_cronometro",
+                        "Resetear":"resetear_cronometro"
+        },
+        "Alarma":{
+            "Anadir":"configurar",
+            "Activar":"configurar"
+        }
+    },
+    "Sensores": {
+        "Temp.": {
+            "Accion": "mostrar_temperatura"
+        },
+        "Humedad": {
+            "Accion": "mostrar_humedad"
+        }
+    },
+    "OS":{
+        "Camara":{
+            "Fotos":"tomar_foto",
+            "Videos":"capturar_video"
+        }
+    }
+    
+  }
