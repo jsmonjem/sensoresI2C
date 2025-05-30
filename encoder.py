@@ -258,8 +258,8 @@ if __name__ == "__main__":
     sen.clear_display()
     
     
-    # Carpeta actual es por definicion, el propio json dependiendo de la carpeta que yo escoja.
-    # Path es la lista de carpetas que he escogido.
+    # Carpeta actual es por definicion, algun "submenu" del JSON.
+    # Path es la lista de carpetas a las que he entrado.
     # Disponibles, es la lista de opciones de la carpeta actual.
 
     with open('menu.json') as f:

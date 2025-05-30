@@ -7,9 +7,6 @@ import humedad
 
 I2C_BUS = 1  # Normalmente es 1 en Raspberry Pi
 
-#humedad = 0x38 
-presion = 0x77
-encoder = 0x36
 display = 0x3c
 
 
@@ -18,14 +15,14 @@ bus = SMBus(1)  # Usar el bus I2C correcto
 
 # Función para enviar comandos al SSD1315
 #bus.write_byte_data(address, control_byte, data_byte)
-#control_byte options:
-#0x00:command
-#0x40:data
+#Control_byte options:
+# 0x00:command
+# 0x40:data
 def send_command(cmd):
     bus.write_byte_data(display, 0x00, cmd)
 
-# Secuencia de inicialización basada en el manual
 
+# Secuencia de inicialización basada en el manual
 commands = [
         0xAE,  # Display OFF
         0xD5, 0x80,  # Set Display Clock Divide Ratio/Oscillator Frequency

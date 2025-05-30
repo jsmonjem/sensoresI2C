@@ -7,24 +7,24 @@ import sht41
 #inicializar display
 sen.init_display(sen.commands)
 sen.clear_display()
+
 #inicializar sensor de presion
 presion.init_pressure()
+
 #inicializar sensor de humedad
 humedad.init_aht20()
-humedad.reset_aht20()
-#realizar mediciones
 
+#realizar mediciones
 sensor=sht41.inicializar()
 
     
-
 while True:
     try:
         shttemperature, shthumidity = sht41.medir(sensor)
-        #sensor de humedad
+        # Sensor de humedad
         if humedad.check_status()==0x18:
             humidity, Htemperature = humedad.measure()
-        #sensor de temperatura
+        # Sensor de presion
         calib_data = presion.read_calibration_data()
         adc_P, adc_T = presion.read_raw_data()
         temperature, t_fine = presion.compensate_temperature(adc_T, calib_data)
@@ -32,11 +32,9 @@ while True:
         altitude = presion.calculate_altitude(pressure)
         
         if time.localtime()[3] > 5 and time.localtime()[3] < 18:
-            #sen.clear_display()
             sen.init_display([0xA7])
             
         else:
-            #sen.clear_display()
             sen.init_display([0xA6])
 
 
