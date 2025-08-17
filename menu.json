@@ -1,27 +1,39 @@
 {
     "Reloj": {
         "Hora": "mostrar_hora",
-        "Crono":{"Iniciar":"iniciar_cronometro",
-                        "Resetear":"resetear_cronometro"
+        "Crono": {
+            "Iniciar": "iniciar_cronometro",
+            "Resetear": "resetear_cronometro"
         },
-        "Alarma":{
-            "Anadir":"configurar",
-            "Activar":"configurar"
+        "Alarma": {
+            "Añadir": "configurar_alarma",
+            "Activar": "activar_alarma"
         }
     },
     "Sensores": {
-        "Temp.": {
-            "Accion": "mostrar_temperatura"
+        "Temperatura": "mostrar_temperatura",
+        "Humedad": "mostrar_humedad",
+        "Presión": "mostrar_presion"
+    },
+    "OS": {
+        "Cámara": {
+            "Fotos": "tomar_foto",
+            "Videos": "capturar_video"
         },
-        "Humedad": {
-            "Accion": "mostrar_humedad"
+        "Sistema": {
+            "Apagar": "apagar_raspberry",
+            "Reiniciar": "reiniciar_raspberry",
+            "Info del sistema": "mostrar_info"
         }
     },
-    "OS":{
-        "Camara":{
-            "Fotos":"tomar_foto",
-            "Videos":"capturar_video"
+    "Extras": {
+        "Juegos": {
+            "Pong": "jugar_pong",
+            "Snake": "jugar_snake"
+        },
+        "Luces": {
+            "Encender": "luces_on",
+            "Apagar": "luces_off"
         }
     }
-    
-  }
+}

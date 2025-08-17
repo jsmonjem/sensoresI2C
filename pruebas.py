@@ -5,7 +5,7 @@ def convert_ttf_to_bitmap(font_path, size=8):
     font = ImageFont.truetype(font_path, size)
     characters = string.ascii_uppercase + string.ascii_lowercase + string.digits + string.punctuation + " " + "°"
     font_dict = {}
-    
+     
     for char in characters:
         img = Image.new("1", (size, size), 0)
         draw = ImageDraw.Draw(img)

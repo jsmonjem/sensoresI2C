@@ -38,7 +38,7 @@ commands = [
         0xD9, 0xF1,  # Pre-charge Period
         0xDB, 0x40,  # VCOMH Deselect Level
         0xA4,  # Entire Display ON
-        0xA6,  # A6 : Normal Display Mode, texto negro; A7 : Inverse Display Mode, texto blanco
+        #0xA6,  # A6 : Normal Display Mode, texto negro; A7 : Inverse Display Mode, texto blanco
         0xAF   # Display ON
 ]
 
@@ -62,13 +62,10 @@ def fill_display():
 
 # Apagar todos los píxeles
 def clear_display():
-    for page in range(8):
-        send_command(0xB0 + page)
-        send_command(0x00)
-        send_command(0x10)
-        for _ in range(128):
-            bus.write_byte_data(display, 0x40, 0x00)  # Enviar datos (todos los bits apagados)
-
+    for pagina in range(0,8):
+        set_col_display(0)
+        set_page_display(pagina)
+        write_line([], completarLinea=127)
 
 # Dibujar un cuadrado en los bordes del display
 def draw_square():
@@ -517,15 +514,21 @@ def split_string (string, fuente):
     
 
 def set_col_display(col): #indicarle al display la columna donde va a empezar a escribir.
+
     send_command(col & 0x0F)  # Decirle al display en qué columna empezar a dibujar
     send_command(0x10 | (col >> 4))  # Decirle al display en qué columna empezar a dibujar
-    
-def send_data_display(pos_y, data): #envia un caracter (data) al display, en la pagina page, columna col.
+    time.sleep(0.001)
+
+def set_page_display(pos_y):
     send_command(0xB0 + pos_y)  # Decirle al display en qué pagina empezar a dibujar
+
+
+def send_data_display( data): # Envia un caracter (data) al display.
     bus.write_byte_data(display, 0x40, data)  # Envía cada columna de cada caracter
 
 
-# Obtiene los bytes del string de entrada, entrega varios grupos de bytes un grupo por pagina.
+
+# Obtiene los bytes del string de entrada, separados en paginas. Es usado para fuentes de 16 pixeles en adelante.
 def split_string_into_byteColumns(string, fuente):
     column0bytes = []
     column1bytes = []
@@ -538,38 +541,58 @@ def split_string_into_byteColumns(string, fuente):
             column1bytes.append((col >> 8)  & 0xFF)  # Primer byte  (parte baja)
             column2bytes.append((col >> 16) & 0xFF)  # Segundo byte (parte alta)
             column3bytes.append((col >> 24) & 0xFF)
-
+    
     return column3bytes, column2bytes, column1bytes, column0bytes
 
 
-# Envia una linea completa al display (ese string, se divide en ).
-def write_line(lineincolsofbytes, pos_y, completar=0):
+# Envia una linea completa al display, conformada por: el string, y espacios vacios.
+# El objetivo es borrar lo que pudo estar despues del sting enviado. 
+def write_lineLEEEEENTO(lineincolsofbytes, completarLinea=0):
+    t0 = time.perf_counter()
     for byte in lineincolsofbytes:
-        send_data_display(pos_y, byte) # Ubiquese en la pagina "pos_y"
-    if completar != 0:
-        for columnaAdicional in range(completar):
-            send_data_display(pos_y, 0x00) #ubiquese en la pagina "pos_y"
+        send_data_display(byte) 
+    if completarLinea != 0:
+        for columnaAdicional in range(completarLinea):
+            send_data_display(0x00) 
+    t1 = time.perf_counter()
+    print("enviar una linea tarda : ", t1-t0)
+    time.sleep(0.001)
 
-def manage_space(string, fuente, start_page=0, alignement ="Left", completar=False):
+def write_line(datos, completarLinea=False):
+
+    if completarLinea:
+        while len(datos) < 128:
+            datos.append(0x00)
+
+    for i in range(0, len(datos), 32):
+        chunk = datos[i:i+32]
+        bus.write_i2c_block_data(display, 0x40, chunk)
+
+
+def manage_space(string, fuente, start_page=0, alignement ="Left", completarLinea=False, completarPaginas=False):
     # Determinar las paginas que se requieren segun el tamanio de la fuente.
-    
+    string=remove_accents(string)
     if fuente["size"] == 8:
-        # Separar en grupos de palabras (1 grupo por pagina) que sumen <127 columnas...
+        # Separar el string en grupos de palabras que sumen <127 columnas (1 grupo por pagina) ...
         parrafos, anchos = split_string(string, fuente)
         pagina = start_page
         for page in range(len(parrafos)):
+            
             if alignement == "Left":
                 inicio = 1
             elif alignement == "Center":
                 inicio = int((127-anchos[page])/2)
-
+            elif isinstance(alignement, int):
+                inicio=alignement
             column3bytes, column2bytes, column1bytes, column0bytes = split_string_into_byteColumns(parrafos[page], fuente)
-            set_col_display(inicio)
-            write_line(column0bytes, pagina)
+            set_col_display(inicio) #Esto depende de la alineacion: centro o izq.
+
+            set_page_display(pagina)
+            write_line(column0bytes)
             pagina=pagina+1
 
     elif fuente["size"] == 16: 
-        #separar en grupos de palabras que sumen <127 columnas...
+        # Separar en grupos de palabras que sumen <127 columnas...
         parrafos, anchos = split_string(string, fuente)
         pagina=start_page
         for page in range(len(parrafos)):
@@ -577,26 +600,45 @@ def manage_space(string, fuente, start_page=0, alignement ="Left", completar=Fal
                 inicio = 1
             elif alignement == "Center":
                 inicio = int((127-anchos[page])/2)
-
+            
             column3bytes, column2bytes, column1bytes, column0bytes = split_string_into_byteColumns(parrafos[page], fuente)
-            if completar == False:
+            # Completar fila o no, anade espacios vacios al final de la fila.
+            if completarLinea == False:
                 set_col_display(inicio)
-                write_line(column0bytes, pagina)
+                set_page_display(pagina)
+                write_line(column0bytes)
+            
                 set_col_display(inicio)
-                write_line(column1bytes, pagina + 1)
-                pagina=pagina + 2            
+                set_page_display(pagina+1)
+                write_line(column1bytes)
+                
+                pagina=pagina + 2  
+                set_page_display(pagina)          
             else:
                 set_col_display(inicio)
-                write_line(column0bytes, pagina, completar=(127-anchos[page]))
+                set_page_display(pagina)
+                write_line(column0bytes, completarLinea=(127-anchos[page]))
+
                 set_col_display(inicio)
-                write_line(column1bytes, pagina + 1, completar=(127-anchos[page]))
+                set_page_display(pagina+1)
+                write_line(column1bytes, completarLinea=(127-anchos[page]))
+
                 pagina=pagina + 2     
+                set_page_display(pagina)
+            # Completar paginas inferiores o no, anade filas vacías en las paginas inferiores.
+            if completarPaginas:
+                for paginas in range(pagina,8):
+                    set_col_display(0)
+                    set_page_display(paginas)
+                    write_line([], completarLinea=126)
 
     elif fuente["size"] == 24:
         #caracterres de 3 bytes, 3 pagina de alto.
         #separar en grupos de palabras que sumen <127 columnas...
         parrafos, anchos=split_string(string, fuente)
         pagina=start_page
+
+        # Definimos la columna de inicio dependiendo de la alineacion deseada.
         for page in range(len(parrafos)):
             if alignement == "Left":
                 inicio = 1
@@ -604,25 +646,50 @@ def manage_space(string, fuente, start_page=0, alignement ="Left", completar=Fal
                 inicio = int((127-anchos[page])/2)
 
             column3bytes, column2bytes, column1bytes, column0bytes = split_string_into_byteColumns(parrafos[page], fuente)
-            if completar == False:
+
+            # Completar fila o no, anade espacios vacios al final de la fila.
+            if completarLinea == False:
                 set_col_display(inicio)
-                write_line(column0bytes, pagina)
+                set_page_display(pagina)
+                write_line(column0bytes)
+
                 set_col_display(inicio)
-                write_line(column1bytes, pagina+1)
+                set_page_display(pagina+1)
+                write_line(column1bytes)
+
                 set_col_display(inicio)
-                write_line(column2bytes, pagina+2)       
+                set_page_display(pagina+2)
+                write_line(column2bytes)   
+
                 pagina = pagina+3
+                set_page_display(pagina)
+
             else:
                 set_col_display(inicio)
-                write_line(column0bytes, pagina, completar=(127-anchos[page]))
+                set_page_display(pagina)
+                write_line(column0bytes, completarLinea=(127-anchos[page]))
+                
                 set_col_display(inicio)
-                write_line(column1bytes, pagina+1, completar=(127-anchos[page]))
+                set_page_display(pagina+1)
+                write_line(column1bytes, completarLinea=(127-anchos[page]))
+                
                 set_col_display(inicio)
-                write_line(column2bytes, pagina+2, completar=(127-anchos[page]))       
+                set_page_display(pagina+2)
+                write_line(column2bytes, completarLinea=(127-anchos[page]))       
+                
                 pagina = pagina+3
+                set_page_display(pagina)
+
+            # Completar paginas inferiores o no, anade filas vacías en las paginas inferiores.
+            if completarPaginas:
+                for paginas in range(pagina,8):
+                    set_col_display(0)
+                    set_page_display(paginas)
+                    write_line([], completarLinea=126)
+
                 
     elif fuente["size"]==32:
-        #caracterres de 4 bytes, 4 pagina de alto.
+        #caracterres de 4 bytes, 4 paginas de alto.
         #separar en grupos de palabras que sumen <127 columnas...
         parrafos, anchos=split_string(string, fuente)
         pagina=start_page
@@ -634,15 +701,24 @@ def manage_space(string, fuente, start_page=0, alignement ="Left", completar=Fal
 
             column3bytes, column2bytes, column1bytes, column0bytes = split_string_into_byteColumns(parrafos[page], fuente)
             set_col_display(inicio)
-            write_line(column0bytes, pagina)
+            set_page_display(pagina)
+            write_line(column0bytes)
+
             set_col_display(inicio)
-            write_line(column1bytes, pagina + 1)
+            set_page_display(pagina+1)
+            write_line(column1bytes)
+
             set_col_display(inicio)
-            write_line(column2bytes, pagina + 2)       
+            set_page_display(pagina+2)
+            write_line(column2bytes)       
+
             set_col_display(inicio)
-            write_line(column3bytes, pagina + 3)       
+            set_page_display(pagina+3)
+            write_line(column3bytes)       
+
             pagina = pagina + 4
-         
+            set_page_display(pagina)
+    
 
 # Ejecutar funciones:
 if __name__ == "__main__":

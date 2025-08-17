@@ -3,6 +3,7 @@ import time
 import os
 import json
 import sen
+import script
 
 #=====================================================================
 # Code to read AS5600.  
@@ -132,12 +133,11 @@ def graficar (valorNormalizado, barras=40, negativo=True):
             print(" "*barras,"|","#"*int(barras*valorNormalizado))
     else:
         print(barras*2*"-")
-        #print("#"*int(2*barras*valorNormalizado))
         print(" "*int(2*barras*valorNormalizado),"#",)
         
 
-def stateManager(umbralP = 120, umbralV = 0.15, intervalo = 0.05, Vflag=False, Pcounter = 0, Vcounter = 0):
-    # Definir la cantidad de triggers/2 en los 365 grados.
+def stateManager(umbralP = 180, umbralV = 0.15, intervalo = 0.05, Vflag=False, Pcounter = 0, Vcounter = 0):
+    # Definir la cantidad de triggers/2 en los 360 grados.
     Notriggers = int(360/umbralP)
     ListaTriggers = []
 
@@ -174,9 +174,9 @@ def stateManager(umbralP = 120, umbralV = 0.15, intervalo = 0.05, Vflag=False, P
                         pendientePos+=1    
                     elif velo<0: 
                         pendientePos-=1
+
                     if velo!=0:
                         ListaTriggers = []
-
                         ### Algo me dice que aqui hay un error. Estoy cambiando la posicion de los triggers,
                         ### sin realmente haber aplicado los cambios de aumentar/reducir Pcounter.
                         if Pcounter%2==0:    
@@ -210,20 +210,23 @@ def stateManager(umbralP = 120, umbralV = 0.15, intervalo = 0.05, Vflag=False, P
             Vminima=0
             Vmaxima=0
             pendientePos=0
+    
+    
+      
+    # print("\033[2J\033[H", end="")
+    #print( f"velo: {velo:3.4f}\t anguloActual: {anguloActual:3.2f}")
+    #print( f"Pcounter: {Pcounter}\t Vcounter: {Vcounter}")   
+    #graficar (anguloActual/360, negativo=False)
+    #
+    #if Pcounter%2==0:
+    #    for trigger in range(Notriggers):
+    #        graficar (360/Notriggers*trigger/360, negativo=False)
+    #else:
+    #    for trigger in range(Notriggers):
+    #        graficar ((360/Notriggers*trigger + 180/Notriggers)/360, negativo=False)
+    
     return Pcounter, Vcounter, Vflag
 
-    """   
-    print("\033[2J\033[H", end="")
-    print( f"velo: {velo:3.4f}\t anguloActual: {anguloActual:3.2f}")
-    print( f"Pcounter: {Pcounter}\t Vcounter: {Vcounter}")   
-    graficar (anguloActual/360, negativo=False)
-    if Pcounter%2==0:
-        for trigger in range(Notriggers):
-            graficar (360/Notriggers*trigger/360, negativo=False)
-    else:
-        for trigger in range(Notriggers):
-            graficar ((360/Notriggers*trigger + 180/Notriggers)/360, negativo=False)
-    """
 
 def actualizar_estado():
     with open('menu.json') as f:
@@ -250,6 +253,9 @@ if __name__ == "__main__":
     disponibles = None
     displayActualizado = False
     PcounterViejo = 0
+    color=None
+    inicializarReloj=False
+    ultimoMinuto=None
     
     print("Ejecutando...")
     
@@ -259,7 +265,7 @@ if __name__ == "__main__":
     
     
     # Carpeta actual es por definicion, algun "submenu" del JSON.
-    # Path es la lista de carpetas a las que he entrado.
+    # Path es la lista de carpetas a las que he entrado (breadcrumbs). 
     # Disponibles, es la lista de opciones de la carpeta actual.
 
     with open('menu.json') as f:
@@ -292,28 +298,57 @@ if __name__ == "__main__":
                 displayActualizado = False
 
 
-            # Display:
+            # Display: se muestran cosas solo si disponibles es un string. 
+
+            if time.localtime()[3] >= 6 and time.localtime()[3] < 18:
+                if color != "blanco":
+                    sen.init_display([0xA7])
+                    color="blanco"
+            elif color !="negro":
+                sen.init_display([0xA6])
+                color="negro"
+                
             if isinstance(disponibles, str) and displayActualizado == False: 
-                if disponibles=="mostrar_hora":
-                    sen.manage_space(f"{time.localtime()[3]:02d}:{time.localtime()[4]:02d}", sen.calibri32, start_page=0, alignement="Center", completar=True)
+
+                if disponibles == "mostrar_hora":
+                    if inicializarReloj == False:
+                        script.todo(False)
+                        inicializarReloj=True
+                    else:
+                        if ultimoMinuto != time.localtime()[4]:
+                            script.todo(True)
+                            ultimoMinuto = time.localtime()[4]
                     displayActualizado = False
                     Pcounter1, Vcounter1, Vflag1 = stateManager(Pcounter=Pcounter1, Vcounter=Vcounter1, Vflag=Vflag1)
-                elif disponibles=="mostrar_temperatura":
+
+                
+                if disponibles=="mostrar_temperatura":
                     displayActualizado = True
-                    
-            elif isinstance(disponibles, list) and displayActualizado == False:
+
+
+            # Mostrar en pantalla la lista de opciones: solo se muestran opciones si disponible es una lista.
+
+            elif isinstance(disponibles, list) and displayActualizado == False:                                
+                inicializarReloj = False
+                
                 for indice in range(len(disponibles)):
                     
-                    if indice < Pcounter1 % len(disponibles):
-                        sen.manage_space(disponibles[indice], sen.calibri16, start_page=2*indice, alignement="Left", completar=True)
-                    elif indice == Pcounter1 % len(disponibles):
-                        sen.manage_space(disponibles[indice], sen.calibri24, start_page=2*indice, alignement="Left", completar=True)
+                    completarPagi = None
+                    if indice == len(disponibles)-1:
+                        completarPagi=True
                     else:
-                        sen.manage_space(disponibles[indice], sen.calibri16, start_page=2*indice + 1 , alignement="Left", completar=True)
+                        completarPagi=False
                     
-                    displayActualizado = True
-
+                    if indice < Pcounter1 % len(disponibles):
+                        sen.manage_space(disponibles[indice], sen.calibri16, start_page=2*indice, 
+                                        alignement="Left", completarLinea=True, completarPaginas = completarPagi)
+                    elif indice == Pcounter1 % len(disponibles):
+                        sen.manage_space(disponibles[indice], sen.calibri24, start_page=2*indice, 
+                                        alignement="Left", completarLinea=True, completarPaginas = completarPagi)
+                    else:
+                        sen.manage_space(disponibles[indice], sen.calibri16, start_page=2*indice + 1,
+                                        alignement="Left", completarLinea=True, completarPaginas = completarPagi)
+                displayActualizado = True
+            
             PcounterViejo = Pcounter1
 
-
-   
