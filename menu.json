@@ -21,19 +21,10 @@
             "Videos": "capturar_video"
         },
         "Sistema": {
-            "Apagar": "apagar_raspberry",
-            "Reiniciar": "reiniciar_raspberry",
-            "Info del sistema": "mostrar_info"
-        }
-    },
-    "Extras": {
-        "Juegos": {
-            "Pong": "jugar_pong",
-            "Snake": "jugar_snake"
-        },
-        "Luces": {
-            "Encender": "luces_on",
-            "Apagar": "luces_off"
+            "Power":{   "Apagar": "apagar_raspberry",
+                        "Reiniciar": "reiniciar_raspberry"},
+            "Info del sistema": "mostrar_info",
+            "Brillo":"cambiar_brillo"
         }
     }
 }

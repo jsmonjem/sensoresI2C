@@ -178,8 +178,9 @@ font={
 "}": [0x0, 0x41, 0x36, 0x8, 0x0, 0x0],
 "`~": [0x8, 0x4, 0x4, 0x8, 0x10, 0x8, 0x0],
 " ": [0x0, 0x0, 0x0],
-"size": 8
-
+"size": 8,
+"§":[0xFF],
+"¢":[0x00]
 }
 
 
@@ -584,12 +585,30 @@ def manage_space(string, fuente, start_page=0, alignement ="Left", completarLine
                 inicio = int((127-anchos[page])/2)
             elif isinstance(alignement, int):
                 inicio=alignement
+            
             column3bytes, column2bytes, column1bytes, column0bytes = split_string_into_byteColumns(parrafos[page], fuente)
-            set_col_display(inicio) #Esto depende de la alineacion: centro o izq.
+            # Completar fila o no, anade espacios vacios al final de la fila.
+            if completarLinea == False:
+                set_col_display(inicio)
+                set_page_display(pagina)
+                write_line(column0bytes)
+                                            
+                pagina=pagina + 1  
+                set_page_display(pagina)          
+            else:
+                set_col_display(inicio)
+                set_page_display(pagina)
+                write_line(column0bytes, completarLinea=(127-anchos[page]))
+                
+                pagina=pagina + 1     
+                set_page_display(pagina)
 
-            set_page_display(pagina)
-            write_line(column0bytes)
-            pagina=pagina+1
+            # Completar paginas inferiores o no, anade filas vacías en las paginas inferiores.
+            if completarPaginas:
+                for paginas in range(pagina,completarPaginas):
+                    set_col_display(0)
+                    set_page_display(paginas)
+                    write_line([], completarLinea=126)  
 
     elif fuente["size"] == 16: 
         # Separar en grupos de palabras que sumen <127 columnas...
@@ -627,7 +646,7 @@ def manage_space(string, fuente, start_page=0, alignement ="Left", completarLine
                 set_page_display(pagina)
             # Completar paginas inferiores o no, anade filas vacías en las paginas inferiores.
             if completarPaginas:
-                for paginas in range(pagina,8):
+                for paginas in range(pagina,completarPaginas):
                     set_col_display(0)
                     set_page_display(paginas)
                     write_line([], completarLinea=126)
@@ -682,7 +701,7 @@ def manage_space(string, fuente, start_page=0, alignement ="Left", completarLine
 
             # Completar paginas inferiores o no, anade filas vacías en las paginas inferiores.
             if completarPaginas:
-                for paginas in range(pagina,8):
+                for paginas in range(pagina,completarPaginas):
                     set_col_display(0)
                     set_page_display(paginas)
                     write_line([], completarLinea=126)
