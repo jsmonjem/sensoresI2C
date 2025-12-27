@@ -1,8 +1,10 @@
-from smbus2 import SMBus
+#from smbus2 import SMBus
 import argparse
 import unicodedata
 import time
 import humedad
+import encoder
+from i2c_bus import bus
 
 
 I2C_BUS = 1  # Normalmente es 1 en Raspberry Pi
@@ -11,7 +13,7 @@ display = 0x3c
 
 
 # Dirección I2C del SSD1315
-bus = SMBus(1)  # Usar el bus I2C correcto
+#bus = SMBus(1)  # Usar el bus I2C correcto
 
 # Función para enviar comandos al SSD1315
 #bus.write_byte_data(address, control_byte, data_byte)
@@ -20,6 +22,10 @@ bus = SMBus(1)  # Usar el bus I2C correcto
 # 0x40:data
 def send_command(cmd):
     bus.write_byte_data(display, 0x00, cmd)
+
+def send_commands_sequence(cmd):
+    for command in cmd:
+        send_command(command)
 
 
 # Secuencia de inicialización basada en el manual
@@ -43,12 +49,10 @@ commands = [
 ]
 
 def init_display(commands):
-    if len(commands)==1:
-        send_command(commands[0])
-    else:
-        for cmd in commands:
-            send_command(cmd)
-        print("Display inicializado correctamente.")
+    brillo = encoder.leer_brillo()
+    commands[17] = brillo
+    send_commands_sequence(commands)
+    print("Display inicializado correctamente.")
 
 
 # Encender todos los píxeles

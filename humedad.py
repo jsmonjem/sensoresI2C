@@ -1,10 +1,12 @@
 from smbus2 import SMBus
 import time
+from i2c_bus import bus
+
 
 I2C_BUS = 1
 AHT20_ADDR = 0x38  
 
-bus = SMBus(I2C_BUS)
+#bus = SMBus(I2C_BUS)
 
 def init_aht20():
 

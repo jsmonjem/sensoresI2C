@@ -1,10 +1,12 @@
 from smbus2 import SMBus
 import struct
 import math
+from i2c_bus import bus
+
 
 I2C_BUS = 1
 BMP280_ADDR = 0x77
-bus = SMBus(I2C_BUS)
+#bus = SMBus(I2C_BUS)
 
 def init_pressure():
     t_sb = 4       # 100 -> 500 ms entre mediciones
