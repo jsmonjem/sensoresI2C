@@ -1,0 +1,9 @@
+{
+    "display": {
+        "brillo": 255
+    },
+    "camara": {
+        "iso": 1,
+        "af": 10
+    }
+}
