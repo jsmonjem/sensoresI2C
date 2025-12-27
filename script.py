@@ -18,9 +18,11 @@ def todo(inicializado):
         #inicializar sensor de humedad
         humedad.init_aht20()
 
+        #inicializar sensor de humedad
+        sht41.inicializar()
+
     # Realizar mediciones
-    sensor=sht41.inicializar()
-    shttemperature, shthumidity = sht41.medir(sensor)
+    shttemperature, shthumidity = sht41.medir()
 
     # Sensor de humedad
     if humedad.check_status() == 0x18:
@@ -69,10 +71,11 @@ def dibujarHumedad(inicializado):
 
         #inicializar sensor de humedad
         humedad.init_aht20()
+        
+        #inicializar sensor de humedad
+        sht41.inicializar()
 
-    # Realizar mediciones
-    sensor=sht41.inicializar()
-    shttemperature, shthumidity = sht41.medir(sensor)
+    shttemperature, shthumidity = sht41.medir()
 
 
     # Enviar al display
